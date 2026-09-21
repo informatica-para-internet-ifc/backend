@@ -276,7 +276,7 @@ print('CONFIGURAÇÃO DA APLICAÇÃO')
 print('=' * 70)
 
 print(f'DEBUG....................: {DEBUG if DEBUG else "NÃO DEFINIDO"}')
-print(f'SECRET_KEY...............: {SECRET_KEY if SECRET_KEY else "NÃO DEFINIDA"}')
+print(f'SECRET_KEY...............: {"definida" if SECRET_KEY and SECRET_KEY != "django-insecure" else "INSEGURA (padrão)"}')
 
 print()
 
@@ -299,6 +299,6 @@ print()
 print(f'CLOUDINARY..............: {"SIM" if CLOUDINARY_URL else "NÃO"}')
 
 if CLOUDINARY_URL:
-    print(f'CLOUDINARY_URL..........: {CLOUDINARY_URL}')
+    print(f'CLOUDINARY_CLOUD........: {CLOUDINARY_URL.rsplit("@", 1)[-1]}')
 
 print('=' * 70)

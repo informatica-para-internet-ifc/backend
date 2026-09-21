@@ -39,6 +39,11 @@ FRONTEND_URLS = [
 ]
 
 CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
+# Ative quando a conta Cloudinary permitir a entrega pública de arquivos
+# raw/PDF/ZIP (Settings > Security > "Restricted media types"). Enquanto
+# desativado, documentos (uploader.Document, core.Arquivo) usam o disco
+# local do Django para que o download funcione.
+CLOUDINARY_RAW_ENABLED = os.getenv('CLOUDINARY_RAW_ENABLED', 'False').lower() == 'true'
 
 CORS_ALLOWED_ORIGINS = FRONTEND_URLS
 CSRF_TRUSTED_ORIGINS = FRONTEND_URLS
@@ -65,6 +70,7 @@ INSTALLED_APPS = [
 
     # Aplicações do projeto
     'core',
+    'uploader',
 ]
 
 # ============================================================
@@ -164,10 +170,16 @@ MEDIA_ENDPOINT = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 FILE_UPLOAD_PERMISSIONS = 0o640
 
-# Durante o desenvolvimento o frontend precisa acessar
-# diretamente o servidor Django.
+# URL pública do próprio backend, usada para montar URLs absolutas de
+# arquivos servidos localmente (MEDIA_URL). Em produção, defina
+# BACKEND_URL para o domínio real (ex: https://api.seudominio.com).
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000').rstrip('/')
 
-MEDIA_URL = 'http://127.0.0.1:8000/media/'
+# O frontend acessa os arquivos de mídia sempre por uma URL absoluta do
+# backend — inclusive quando o Cloudinary está configurado, já que
+# alguns tipos de arquivo (ver uploader.helpers.storage) continuam
+# sendo servidos localmente.
+MEDIA_URL = f'{BACKEND_URL}/media/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # ============================================================
@@ -183,7 +195,15 @@ if CLOUDINARY_URL:
         'cloudinary_storage',
     ]
 
-    MEDIA_URL = '/media/'
+    # django-cloudinary-storage usa MEDIA_URL como prefixo de pasta dos
+    # objetos por padrão. Como MEDIA_URL agora é uma URL absoluta do
+    # backend (para os arquivos servidos localmente), o prefixo do
+    # Cloudinary precisa ser definido explicitamente, senão a URL
+    # absoluta acaba embutida no public_id do arquivo.
+    CLOUDINARY_STORAGE = {
+        'PREFIX': 'media/',
+    }
+
     STORAGES = {
         'default': {
             'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
@@ -215,7 +235,7 @@ REST_FRAMEWORK = {
     ),
 
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+        'rest_framework.permissions.AllowAny',
     ),
 
     'DEFAULT_SCHEMA_CLASS':

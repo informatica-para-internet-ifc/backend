@@ -1,37 +1,29 @@
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 
-# The project's default storage (settings.STORAGES['default']) is Cloudinary
-# whenever CLOUDINARY_URL is set, so django.core.files.storage.default_storage
-# is NOT local disk in that case. Local fallbacks must use an explicit
-# FileSystemStorage instance instead.
-_local_storage = FileSystemStorage()
+from uploader.storage import DatabaseStorage
+
+
+def _cloudinary_enabled() -> bool:
+    return bool(getattr(settings, "USE_CLOUDINARY", False))
 
 
 def raw_storage():
-    """Storage for arbitrary downloadable files (PDF, DOCX, ZIP...).
+    """Storage para arquivos baixáveis (PDF, DOCX, ZIP...).
 
-    Many Cloudinary accounts block public delivery of raw/PDF/ZIP files by
-    default ("Restricted media types" in the console's Security settings),
-    which makes uploads succeed but downloads return 401 "deny or ACL
-    failure" regardless of resource_type or URL signing. Until that setting
-    is enabled on the account, raw documents are kept on local disk (served
-    directly by Django) so downloads actually work. Set
-    CLOUDINARY_RAW_ENABLED=true in the environment once the Cloudinary
-    account allows raw/PDF/ZIP delivery to switch documents back to
-    Cloudinary storage.
+    Por padrão os arquivos ficam no banco de dados (persistem entre deploys).
+    Com USE_CLOUDINARY=true e CLOUDINARY_RAW_ENABLED=true, usa o Cloudinary.
     """
-    if getattr(settings, "CLOUDINARY_URL", None) and getattr(settings, "CLOUDINARY_RAW_ENABLED", False):
+    if _cloudinary_enabled() and getattr(settings, "CLOUDINARY_RAW_ENABLED", False):
         from cloudinary_storage.storage import RawMediaCloudinaryStorage
 
         return RawMediaCloudinaryStorage()
-    return _local_storage
+    return DatabaseStorage()
 
 
 def video_storage():
-    """Storage for video files, using Cloudinary's video resource type."""
-    if getattr(settings, "CLOUDINARY_URL", None):
+    """Storage para vídeos: banco de dados, ou Cloudinary com USE_CLOUDINARY=true."""
+    if _cloudinary_enabled():
         from cloudinary_storage.storage import VideoMediaCloudinaryStorage
 
         return VideoMediaCloudinaryStorage()
-    return _local_storage
+    return DatabaseStorage()

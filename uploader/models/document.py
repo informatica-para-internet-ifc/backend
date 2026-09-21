@@ -40,10 +40,8 @@ class Document(models.Model):
 
     @property
     def url(self) -> str:
-        # Quando o Cloudinary ainda não libera a entrega pública de
-        # arquivos raw/PDF na conta, o arquivo fica em disco local e
-        # precisa ser servido com Content-Disposition: attachment via
-        # DocumentUploadViewSet.retrieve, em vez da URL bruta do storage.
-        if getattr(settings, "CLOUDINARY_URL", None) and getattr(settings, "CLOUDINARY_RAW_ENABLED", False):
+        # Fora do Cloudinary, o download passa por DocumentUploadViewSet.retrieve,
+        # que força Content-Disposition: attachment.
+        if getattr(settings, "USE_CLOUDINARY", False) and getattr(settings, "CLOUDINARY_RAW_ENABLED", False):
             return self.file.url  # pylint: disable=no-member
         return f"{settings.BACKEND_URL}/api/media/documents/{self.pk}/"

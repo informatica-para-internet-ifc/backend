@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
@@ -23,6 +21,7 @@ from core.views import (
 )
 
 from uploader.router import router as uploader_router
+from uploader.views import serve_stored_file
 
 router = DefaultRouter()
 
@@ -57,9 +56,7 @@ urlpatterns = [
     path('api/busca/', BuscaView.as_view(), name='busca'),
     # API
     path('api/', include(router.urls)),
-    path('api/media/', include(uploader_router.urls))
+    path('api/media/', include(uploader_router.urls)),
+    # Arquivos enviados, guardados no banco de dados
+    path('media/<path:path>', serve_stored_file, name='media'),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static('/media/', document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.MEDIA_ENDPOINT, document_root=settings.MEDIA_ROOT)

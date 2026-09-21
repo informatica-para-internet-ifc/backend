@@ -1,15 +1,58 @@
 import mimetypes
 from pathlib import Path
 
-from django.http import FileResponse
-from rest_framework import mixins, parsers, viewsets
+import re
 
-from uploader.models import Document, Image, Video
+from django.http import FileResponse, Http404, HttpResponse
+from django.views.decorators.http import require_GET
+from rest_framework import mixins, parsers, viewsets
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from uploader.models import Document, Image, StoredFile, Video
 from uploader.serializers import DocumentUploadSerializer, ImageUploadSerializer, VideoUploadSerializer
 
 
 class CreateViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
-    pass
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+
+_RANGE_RE = re.compile(r'bytes=(\d*)-(\d*)')
+
+
+@require_GET
+def serve_stored_file(request, path):
+    """Serve um arquivo guardado no banco (imagens, vídeos, documentos)."""
+    try:
+        stored = StoredFile.objects.get(name=path)
+    except StoredFile.DoesNotExist as exc:
+        raise Http404 from exc
+
+    data = bytes(stored.content)
+    total = len(data)
+    status = 200
+    headers = {'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=31536000, immutable'}
+
+    match = _RANGE_RE.fullmatch(request.headers.get('Range', '').strip())
+    if match and (match.group(1) or match.group(2)):
+        if match.group(1):
+            start = int(match.group(1))
+            end = min(int(match.group(2)), total - 1) if match.group(2) else total - 1
+        else:
+            start = max(total - int(match.group(2)), 0)
+            end = total - 1
+        if start > end or start >= total:
+            return HttpResponse(status=416, headers={'Content-Range': f'bytes */{total}'})
+        data = data[start:end + 1]
+        status = 206
+        headers['Content-Range'] = f'bytes {start}-{end}/{total}'
+
+    response = HttpResponse(data, status=status, content_type=stored.content_type)
+    for key, value in headers.items():
+        response[key] = value
+    return response
 
 
 class DocumentUploadViewSet(CreateViewSet, mixins.RetrieveModelMixin):

@@ -5,6 +5,8 @@ Database models.
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from uploader.helpers.storage import raw_storage
+
 from .atividade import Atividade
 
 
@@ -19,7 +21,7 @@ class Arquivo(models.Model):
         blank=True,
         verbose_name=_('Atividade'),
     )
-    arquivo = models.FileField(upload_to='arquivos/%Y/%m/', verbose_name=_('Arquivo'))
+    arquivo = models.FileField(upload_to='arquivos/%Y/%m/', storage=raw_storage, verbose_name=_('Arquivo'))
     nome = models.CharField(max_length=200, verbose_name=_('Nome de exibição'))
     tipo_arquivo = models.CharField(max_length=10, blank=True, verbose_name=_('Extensão'))
     tamanho = models.PositiveBigIntegerField(default=0, verbose_name=_('Tamanho em bytes'))

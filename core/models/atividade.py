@@ -23,8 +23,14 @@ class Atividade(models.Model):
         PUBLICADA = 'publicada', 'Publicada'
         ARQUIVADA = 'arquivada', 'Arquivada'
 
+    class Categoria(models.TextChoices):
+        QUESTAO = 'questao', 'Questão'
+        ATIVIDADE = 'atividade', 'Atividade'
+        TUTORIAL = 'tutorial', 'Tutorial'
+
     titulo = models.CharField(max_length=200, verbose_name=_('Título'))
     descricao = models.TextField(blank=True, verbose_name=_('Descrição'))
+    capa = models.URLField(blank=True, max_length=500, verbose_name=_('Imagem de capa'))
     ano = models.ForeignKey(Ano, on_delete=models.PROTECT, related_name='atividades')
     disciplina = models.ForeignKey(Disciplina, on_delete=models.PROTECT, related_name='atividades')
     autor = models.ForeignKey(
@@ -35,6 +41,9 @@ class Atividade(models.Model):
         verbose_name=_('Autor'),
     )
 
+    categoria = models.CharField(
+        max_length=10, choices=Categoria.choices, default=Categoria.ATIVIDADE, verbose_name=_('Categoria')
+    )
     dificuldade = models.CharField(max_length=10, choices=Dificuldade.choices, blank=True)
     tempo_estimado = models.CharField(max_length=40, blank=True, verbose_name=_('Tempo estimado'))
     tags = models.JSONField(default=list, blank=True)

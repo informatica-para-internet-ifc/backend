@@ -22,6 +22,8 @@ from core.views import (
     UserViewSet,
 )
 
+from uploader.router import router as uploader_router
+
 router = DefaultRouter()
 
 router.register(r'usuarios', UserViewSet, basename='usuarios')
@@ -55,7 +57,9 @@ urlpatterns = [
     path('api/busca/', BuscaView.as_view(), name='busca'),
     # API
     path('api/', include(router.urls)),
+    path('api/media/', include(uploader_router.urls))
 ]
 
 if settings.DEBUG:
     urlpatterns += static('/media/', document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_ENDPOINT, document_root=settings.MEDIA_ROOT)

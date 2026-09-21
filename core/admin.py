@@ -80,8 +80,8 @@ class DisciplinaAdmin(admin.ModelAdmin):
 
 @admin.register(models.Atividade)
 class AtividadeAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'disciplina', 'ano', 'autor', 'status', 'dificuldade', 'fixada', 'atualizado_em')
-    list_filter = ('status', 'dificuldade', 'ano', 'disciplina', 'fixada')
+    list_display = ('titulo', 'disciplina', 'ano', 'autor', 'categoria', 'status', 'dificuldade', 'fixada', 'atualizado_em')
+    list_filter = ('categoria', 'status', 'dificuldade', 'ano', 'disciplina', 'fixada')
     search_fields = ('titulo', 'descricao', 'tags')
     date_hierarchy = 'criado_em'
     inlines = [BlocoInline]

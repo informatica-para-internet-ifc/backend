@@ -57,6 +57,10 @@ class AtividadeViewSet(ModelViewSet):
         if status_f:
             qs = qs.filter(status=status_f)
 
+        categoria = params.get('categoria')
+        if categoria:
+            qs = qs.filter(categoria=categoria)
+
         autor = params.get('autor')
         if autor:
             qs = qs.filter(autor_id=autor)
@@ -110,6 +114,7 @@ class AtividadeViewSet(ModelViewSet):
             ano=original.ano,
             disciplina=original.disciplina,
             autor=request.user,
+            categoria=original.categoria,
             dificuldade=original.dificuldade,
             tempo_estimado=original.tempo_estimado,
             tags=original.tags,

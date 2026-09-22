@@ -39,10 +39,13 @@ FRONTEND_URLS = [
 ]
 
 CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
-# Ative quando a conta Cloudinary permitir a entrega pública de arquivos
-# raw/PDF/ZIP (Settings > Security > "Restricted media types"). Enquanto
-# desativado, documentos (uploader.Document, core.Arquivo) usam o disco
-# local do Django para que o download funcione.
+# Por padrão os arquivos enviados são guardados no banco de dados
+# (uploader.storage.DatabaseStorage) e persistem entre deploys. Defina
+# USE_CLOUDINARY=true (com CLOUDINARY_URL) para usar o Cloudinary.
+USE_CLOUDINARY = bool(CLOUDINARY_URL) and os.getenv('USE_CLOUDINARY', 'False').lower() == 'true'
+# Só vale com USE_CLOUDINARY: ative quando a conta Cloudinary permitir a
+# entrega pública de arquivos raw/PDF/ZIP (Settings > Security >
+# "Restricted media types").
 CLOUDINARY_RAW_ENABLED = os.getenv('CLOUDINARY_RAW_ENABLED', 'False').lower() == 'true'
 
 CORS_ALLOWED_ORIGINS = FRONTEND_URLS
@@ -186,9 +189,21 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Cloudinary (opcional)
 # ============================================================
 
-if CLOUDINARY_URL:
-    # Em produção, os arquivos enviados ficam armazenados
-    # no Cloudinary.
+STORAGES = {
+    'default': {
+        'BACKEND': 'uploader.storage.DatabaseStorage',
+    },
+    'staticfiles': {
+        'BACKEND': (
+            'django.contrib.staticfiles.storage.StaticFilesStorage'
+            if DEBUG
+            else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+        ),
+    },
+}
+
+if USE_CLOUDINARY:
+    # Arquivos enviados armazenados no Cloudinary.
 
     INSTALLED_APPS += [
         'cloudinary',
@@ -276,7 +291,7 @@ print('CONFIGURAÇÃO DA APLICAÇÃO')
 print('=' * 70)
 
 print(f'DEBUG....................: {DEBUG if DEBUG else "NÃO DEFINIDO"}')
-print(f'SECRET_KEY...............: {SECRET_KEY if SECRET_KEY else "NÃO DEFINIDA"}')
+print(f'SECRET_KEY...............: {"definida" if SECRET_KEY and SECRET_KEY != "django-insecure" else "INSEGURA (padrão)"}')
 
 print()
 
@@ -296,9 +311,9 @@ print(f'MEDIA_ROOT..............: {MEDIA_ROOT}')
 
 print()
 
-print(f'CLOUDINARY..............: {"SIM" if CLOUDINARY_URL else "NÃO"}')
+print(f'ARMAZENAMENTO DE ARQUIVOS: {"Cloudinary" if USE_CLOUDINARY else "banco de dados"}')
 
-if CLOUDINARY_URL:
-    print(f'CLOUDINARY_URL..........: {CLOUDINARY_URL}')
+if USE_CLOUDINARY:
+    print(f'CLOUDINARY_CLOUD........: {CLOUDINARY_URL.rsplit("@", 1)[-1]}')
 
 print('=' * 70)

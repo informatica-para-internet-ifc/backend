@@ -30,7 +30,7 @@ ALLOWED_HOSTS = ['*']
 # ============================================================
 
 FRONTEND_URLS = [
-    url.strip()
+    url.strip().rstrip('/')
     for url in os.getenv(
         'FRONTEND_URLS',
         'http://localhost:5173,http://127.0.0.1:5173'
